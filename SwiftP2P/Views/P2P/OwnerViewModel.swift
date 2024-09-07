@@ -1,8 +1,8 @@
 //
-//  DeviceFinderViewModel.swift
+//  OwnerViewModel.swift
 //  SwiftP2P
 //
-//  Created by shunsuke tamura on 2024/09/07.
+//  Created by shunsuke tamura on 2024/09/08.
 //
 
 import Foundation
@@ -10,47 +10,19 @@ import MultipeerConnectivity
 import SwiftUI
 import Combine
 
-class DeviceFinderViewModel: NSObject, ObservableObject {
+class OwnerViewModel: NSObject, ObservableObject {
     private let advertiser: MCNearbyServiceAdvertiser
     private let browser: MCNearbyServiceBrowser
-    @Published var peers: [PeerDevice] = []
     private let session: MCSession
     private let serviceType = "nearby-devices"
     
-    @Published var permissionRequest: PermissionRequest?
+    @Published var peers: [PeerDevice] = []
+    var selectedPeer: PeerDevice?
+    var joinedPeer: [PeerDevice] = []
     
-    @Published var isAdvertised: Bool = false {
-        didSet {
-            isAdvertised ? advertiser.startAdvertisingPeer() : advertiser.stopAdvertisingPeer()
-        }
-    }
-    @Published var selectedPeer: PeerDevice? {
-        didSet {
-            print("selected!!")
-            connect()
-        }
-    }
-    
-    @Published var joinedPeer: [PeerDevice] = []
-    
-    @Published var messages: [String] = []
-    let messagePublisher = PassthroughSubject<String, Never>()
+    @Published var messages: [Message] = []
+    let messageReceiver = PassthroughSubject<Message, Never>()
     var subscriptions = Set<AnyCancellable>()
-    
-    func send(string: String) {
-        guard let data = string.data(using: .utf8) else {
-            return
-        }
-        
-        try? session.send(data, toPeers: [joinedPeer.last!.peerId], with: .reliable)
-        
-        messagePublisher.send(string)
-    }
-    
-    @Published var isShakeHandsComplete = false
-    func shakeHandsComplete() {
-        isShakeHandsComplete = true
-    }
     
     override init() {
         let peer = MCPeerID(displayName: UIDevice.current.name)
@@ -70,15 +42,13 @@ class DeviceFinderViewModel: NSObject, ObservableObject {
         advertiser.delegate = self
         session.delegate = self
         
-        messagePublisher
+        messageReceiver
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.messages.append($0)
+                self?.receiveMessage(message: $0)
             }
             .store(in: &subscriptions)
-    }
-    
-    func startBrowsing() {
+        
         browser.startBrowsingForPeers()
     }
     
@@ -86,32 +56,51 @@ class DeviceFinderViewModel: NSObject, ObservableObject {
         browser.stopBrowsingForPeers()
     }
     
-    func show(peerId: MCPeerID) {
-        guard let first = peers.first(where: { $0.peerId == peerId }) else {
-            return
-        }
-        
-        joinedPeer.append(first)
+    // ① 部屋を用意して，相手を招待する
+    func invite(_selectedPeer: PeerDevice) {
+        selectedPeer = _selectedPeer
+        browser.invitePeer(_selectedPeer.peerId, to: session, withContext: nil, timeout: 60)
     }
     
-    private func connect() {
-        print("connect")
-        print("selectedPeer: \(selectedPeer)")
-        guard let selectedPeer else {
+    // ② 招待した相手が入っていたら，この関数を使って自分も部屋に入ったことにする
+    func join() {
+        if !isParticipantsJoined() {
             return
         }
         
-        if session.connectedPeers.contains(selectedPeer.peerId) {
-            print("joined")
-            joinedPeer.append(selectedPeer)
-        } else {
-            print("invite")
-            browser.invitePeer(selectedPeer.peerId, to: session, withContext: nil, timeout: 60)
+        joinedPeer.append(selectedPeer!)
+    }
+    
+    func isParticipantsJoined() -> Bool {
+        guard let selectedPeer = selectedPeer else {
+            return false
         }
+        if !session.connectedPeers.contains(selectedPeer.peerId) {
+            return false
+        }
+        
+        return true
+    }
+    
+    private func receiveMessage(message: Message) {
+        messages.append(message)
+    }
+    
+    func send(message: Message) {
+        guard let data = message.toJson()?.data(using: .utf8) else {
+            return
+        }
+        
+        // 相手に送信
+        try? session.send(data, toPeers: [joinedPeer.last!.peerId], with: .reliable)
+        
+        // 自分にも送信
+        messageReceiver.send(message)
     }
 }
 
-extension DeviceFinderViewModel: MCNearbyServiceBrowserDelegate {
+extension OwnerViewModel: MCNearbyServiceBrowserDelegate {
+    // 接続可能なデバイスをappendする
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
         peers.append(PeerDevice(peerId: peerID))
     }
@@ -123,35 +112,33 @@ extension DeviceFinderViewModel: MCNearbyServiceBrowserDelegate {
 
 
 
-extension DeviceFinderViewModel: MCNearbyServiceAdvertiserDelegate {
+extension OwnerViewModel: MCNearbyServiceAdvertiserDelegate {
     func advertiser(
         _ advertiser: MCNearbyServiceAdvertiser,
         didReceiveInvitationFromPeer peerID: MCPeerID,
         withContext context: Data?,
         invitationHandler: @escaping (Bool, MCSession?) -> Void
     ) {
-        permissionRequest = PermissionRequest(
-            peerId: peerID,
-            onRequest: {
-                [weak self] permission in
-                invitationHandler(permission, permission ? self?.session : nil)
-            }
-        )
+        //
     }
 }
 
-
-extension DeviceFinderViewModel: MCSessionDelegate {
+extension OwnerViewModel: MCSessionDelegate {
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
         //
     }
     
+    // sessionを通して送られてくるmessageをViewLogicのmessageReciverに流す
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
         guard let last = joinedPeer.last, last.peerId == peerID, let message = String(data: data, encoding: .utf8) else {
             return
         }
         
-        messagePublisher.send(message)
+        guard let _message = Message.fromJson(jsonString: message) else {
+            return
+        }
+        
+        messageReceiver.send(_message)
     }
     
     func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {

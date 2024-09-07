@@ -1,8 +1,8 @@
 //
-//  DeviceFinderViewModel.swift
+//  ParticipantsViewModel.swift
 //  SwiftP2P
 //
-//  Created by shunsuke tamura on 2024/09/07.
+//  Created by shunsuke tamura on 2024/09/08.
 //
 
 import Foundation
@@ -10,47 +10,23 @@ import MultipeerConnectivity
 import SwiftUI
 import Combine
 
-class DeviceFinderViewModel: NSObject, ObservableObject {
+class ParticipantsViewModel: NSObject, ObservableObject {
     private let advertiser: MCNearbyServiceAdvertiser
-    private let browser: MCNearbyServiceBrowser
-    @Published var peers: [PeerDevice] = []
     private let session: MCSession
     private let serviceType = "nearby-devices"
-    
-    @Published var permissionRequest: PermissionRequest?
     
     @Published var isAdvertised: Bool = false {
         didSet {
             isAdvertised ? advertiser.startAdvertisingPeer() : advertiser.stopAdvertisingPeer()
         }
     }
-    @Published var selectedPeer: PeerDevice? {
-        didSet {
-            print("selected!!")
-            connect()
-        }
-    }
+    @Published var permissionRequest: PermissionRequest?
     
     @Published var joinedPeer: [PeerDevice] = []
     
-    @Published var messages: [String] = []
-    let messagePublisher = PassthroughSubject<String, Never>()
+    @Published var messages: [Message] = []
+    let messageReceiver = PassthroughSubject<Message, Never>()
     var subscriptions = Set<AnyCancellable>()
-    
-    func send(string: String) {
-        guard let data = string.data(using: .utf8) else {
-            return
-        }
-        
-        try? session.send(data, toPeers: [joinedPeer.last!.peerId], with: .reliable)
-        
-        messagePublisher.send(string)
-    }
-    
-    @Published var isShakeHandsComplete = false
-    func shakeHandsComplete() {
-        isShakeHandsComplete = true
-    }
     
     override init() {
         let peer = MCPeerID(displayName: UIDevice.current.name)
@@ -62,68 +38,56 @@ class DeviceFinderViewModel: NSObject, ObservableObject {
             serviceType: serviceType
         )
         
-        browser = MCNearbyServiceBrowser(peer: peer, serviceType: serviceType)
         
         super.init()
         
-        browser.delegate = self
         advertiser.delegate = self
         session.delegate = self
         
-        messagePublisher
+        messageReceiver
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.messages.append($0)
             }
             .store(in: &subscriptions)
+        
+        advertiser.startAdvertisingPeer()
     }
     
-    func startBrowsing() {
-        browser.startBrowsingForPeers()
+    func join(peer: PeerDevice) {
+        joinedPeer.append(peer)
     }
     
-    func finishBrowsing() {
-        browser.stopBrowsingForPeers()
+    private func receiveMessage(message: Message) {
+        messages.append(message)
     }
     
-    func show(peerId: MCPeerID) {
-        guard let first = peers.first(where: { $0.peerId == peerId }) else {
+    func send(message: Message) {
+        guard let data = message.toJson()?.data(using: .utf8) else {
             return
         }
         
-        joinedPeer.append(first)
-    }
-    
-    private func connect() {
-        print("connect")
-        print("selectedPeer: \(selectedPeer)")
-        guard let selectedPeer else {
-            return
-        }
+        // 相手に送信
+        try? session.send(data, toPeers: [joinedPeer.last!.peerId], with: .reliable)
         
-        if session.connectedPeers.contains(selectedPeer.peerId) {
-            print("joined")
-            joinedPeer.append(selectedPeer)
-        } else {
-            print("invite")
-            browser.invitePeer(selectedPeer.peerId, to: session, withContext: nil, timeout: 60)
-        }
+        // 自分にも送信
+        messageReceiver.send(message)
     }
 }
 
-extension DeviceFinderViewModel: MCNearbyServiceBrowserDelegate {
+extension ParticipantsViewModel: MCNearbyServiceBrowserDelegate {
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
-        peers.append(PeerDevice(peerId: peerID))
+        //
     }
     
     func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
-        peers.removeAll(where: { $0.peerId == peerID })
+        //
     }
 }
 
 
 
-extension DeviceFinderViewModel: MCNearbyServiceAdvertiserDelegate {
+extension ParticipantsViewModel: MCNearbyServiceAdvertiserDelegate {
     func advertiser(
         _ advertiser: MCNearbyServiceAdvertiser,
         didReceiveInvitationFromPeer peerID: MCPeerID,
@@ -140,18 +104,22 @@ extension DeviceFinderViewModel: MCNearbyServiceAdvertiserDelegate {
     }
 }
 
-
-extension DeviceFinderViewModel: MCSessionDelegate {
+extension ParticipantsViewModel: MCSessionDelegate {
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
         //
     }
     
+    // sessionを通して送られてくるmessageをViewLogicのmessageReciverに流す
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
         guard let last = joinedPeer.last, last.peerId == peerID, let message = String(data: data, encoding: .utf8) else {
             return
         }
         
-        messagePublisher.send(message)
+        guard let _message = Message.fromJson(jsonString: message) else {
+            return
+        }
+        
+        messageReceiver.send(_message)
     }
     
     func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {

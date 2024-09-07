@@ -9,54 +9,56 @@ import SwiftUI
 import MultipeerConnectivity
 
 struct OwnerView: View {
-    @StateObject var model = DeviceFinderViewModel()
+    @StateObject var model = OwnerViewModel()
     @Binding var isActive: Bool
+    @State var isShakeHandsComplete: Bool = false
+    @State var isPleaseWaitAlertActive: Bool = false
     
     var body: some View {
         VStack(content: {
             Button(action: {
                 isActive = false
             }) {
-                Text("Close???")
+                Text("Close OwnerView")
             }
             Spacer()
-            NavigationStack {
-                List(model.peers) { peer in
-                    HStack {
-                        Image(systemName: "iphone.gen1")
-                            .imageScale(.large)
-                            .foregroundColor(.accentColor)
-                        
-                        Text(peer.peerId.displayName)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(.vertical, 5)
-                    .onTapGesture {
-                        model.selectedPeer = peer
-                        print("pressed")
-                    }
-                }
-                .onAppear {
-                    model.startBrowsing()
-                }
-                .onDisappear {
-                    model.finishBrowsing()
-                }
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Toggle("Press to be discoverable", isOn: $model.isAdvertised)
-                            .toggleStyle(.switch)
+            if model.selectedPeer == nil {
+                NavigationStack {
+                    List(model.peers, id: \.self) { peer in
+                        HStack {
+                            Image(systemName: "iphone.gen1")
+                                .imageScale(.large)
+                                .foregroundColor(.accentColor)
+                            
+                            Text(peer.peerId.displayName)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.vertical, 5)
+                        .onTapGesture {
+                            model.invite(_selectedPeer: PeerDevice(peerId: peer.peerId))
+                        }
                     }
                 }
             }
+            Button(action: {
+                if (!model.isParticipantsJoined()) {
+                    isPleaseWaitAlertActive = true
+                    return
+                }
+                isShakeHandsComplete = true
+                model.join()
+            }) {
+                Text("Go to GameScreen")
+            }.fullScreenCover(isPresented: $isShakeHandsComplete) {
+                OwnerMessengerView().environmentObject(model)
+            }
+        }).alert(isPresented: $isPleaseWaitAlertActive, content: {
+            Alert(
+                title: Text("\(model.selectedPeer?.peerId.displayName) is not ready. Please wait."),
+                dismissButton: .default(Text("OK"), action: {
+                    isPleaseWaitAlertActive = false
+                })
+            )
         })
-        Spacer()
-        Button(action: {
-            model.shakeHandsComplete()
-        }) {
-            Text("Messenger")
-        }.fullScreenCover(isPresented: $model.isShakeHandsComplete) {
-            MessengerView().environmentObject(model)
-        }
     }
 }

@@ -9,62 +9,46 @@ import SwiftUI
 import MultipeerConnectivity
 
 struct ParticipantsView: View {
-    @StateObject var model = DeviceFinderViewModel()
+    @StateObject var model = ParticipantsViewModel()
     @Binding var isActive: Bool
+    @State var isShakeHandsComplete: Bool = false
+    @State var isJoined: Bool = false
     
     var body: some View {
         VStack(content: {
             Button(action: {
                 isActive = false
             }) {
-                Text("Close!!!!!")
+                Text("Close ParticipantsView")
             }
             Spacer()
-            NavigationStack {
-                List(model.peers) { peer in
-                    HStack {
-                        Image(systemName: "iphone.gen1")
-                            .imageScale(.large)
-                            .foregroundColor(.accentColor)
-                        
-                        Text(peer.peerId.displayName)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(.vertical, 5)
-                }
-                .onAppear {
-                    model.startBrowsing()
-                }
-                .onDisappear {
-                    model.finishBrowsing()
-                }
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Toggle("Press to be discoverable", isOn: $model.isAdvertised)
-                            .toggleStyle(.switch)
+            
+            VStack {
+                if !isJoined {
+                    Text("Matchig")
+                } else {
+                    Text("You are Matched!")
+                    Button(action: {
+                        isShakeHandsComplete = true
+                    }) {
+                        Text("Go to GameScreen")
+                    }.fullScreenCover(isPresented: $isShakeHandsComplete) {
+                        ParticipantsMessengerView().environmentObject(model)
                     }
                 }
             }
-            .alert(item: $model.permissionRequest, content: { request in
-                Alert(
-                    title: Text("Do you want to join \(request.peerId.displayName)"),
-                    primaryButton: .default(Text("Yes"), action: {
-                        request.onRequest(true)
-                        model.show(peerId: request.peerId)
-                    }),
-                    secondaryButton: .cancel(Text("No"), action: {
-                        request.onRequest(false)
-                    })
-                )
-            })
+        }).alert(item: $model.permissionRequest, content: { request in
+            Alert(
+                title: Text("Do you want to join \(request.peerId.displayName)"),
+                primaryButton: .default(Text("Yes"), action: {
+                    request.onRequest(true)
+                    model.join(peer: PeerDevice(peerId: request.peerId))
+                    isJoined = true
+                }),
+                secondaryButton: .cancel(Text("No"), action: {
+                    request.onRequest(false)
+                })
+            )
         })
-        Spacer()
-        Button(action: {
-            model.shakeHandsComplete()
-        }) {
-            Text("Messenger")
-        }.fullScreenCover(isPresented: $model.isShakeHandsComplete) {
-            MessengerView().environmentObject(model)
-        }
     }
 }

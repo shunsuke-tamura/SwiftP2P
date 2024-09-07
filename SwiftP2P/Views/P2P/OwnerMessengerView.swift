@@ -7,19 +7,18 @@
 
 import SwiftUI
 
-struct MessengerView: View {
-    @EnvironmentObject var model: DeviceFinderViewModel
-    @State private var message: String = ""
+struct OwnerMessengerView: View {
+    @EnvironmentObject var model: OwnerViewModel
+    @State private var text: String = ""
     
     var body: some View {
         VStack {
             HStack {
-                TextField("Message", text: $message)
+                TextField("Message", text: $text)
                     .textFieldStyle(.roundedBorder)
                     .padding()
                 Button(action: {
-                    model.send(string: message)
-                    message = ""
+                    model.send(message: Message(message: text))
                 }) {
                     Image(systemName: "paperplane")
                         .imageScale(.large)
@@ -28,7 +27,7 @@ struct MessengerView: View {
             }
             Spacer()
             List(model.messages, id: \.self) { message in
-                Text(message)
+                Text(message.toJson() ?? "Failed to encode Message to JSON")
             }
         }
     }

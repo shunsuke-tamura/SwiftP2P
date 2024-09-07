@@ -13,8 +13,13 @@
 		B73F6DD42C8C2D3800055C13 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B73F6DD32C8C2D3800055C13 /* Preview Assets.xcassets */; };
 		B73F6DDD2C8C30B600055C13 /* OwnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B73F6DDC2C8C30B600055C13 /* OwnerView.swift */; };
 		B73F6DDF2C8C31A500055C13 /* ParticipantsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B73F6DDE2C8C31A500055C13 /* ParticipantsView.swift */; };
-		B73F6DE22C8C728300055C13 /* DeviceFinderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B73F6DE12C8C728300055C13 /* DeviceFinderViewModel.swift */; };
-		B7DF60E72C8C8C58000D428F /* MessengerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DF60E62C8C8C58000D428F /* MessengerView.swift */; };
+		B7DF60E72C8C8C58000D428F /* ParticipantsMessengerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DF60E62C8C8C58000D428F /* ParticipantsMessengerView.swift */; };
+		B7DF60E92C8CAB46000D428F /* OwnerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DF60E82C8CAB46000D428F /* OwnerViewModel.swift */; };
+		B7DF60EC2C8CAC5E000D428F /* PeerDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DF60EB2C8CAC5E000D428F /* PeerDevice.swift */; };
+		B7DF60EE2C8CB14E000D428F /* PermissionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DF60ED2C8CB14E000D428F /* PermissionRequest.swift */; };
+		B7DF60F02C8CB2E6000D428F /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DF60EF2C8CB2E6000D428F /* Message.swift */; };
+		B7DF60F22C8CB9B6000D428F /* ParticipantsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DF60F12C8CB9B6000D428F /* ParticipantsViewModel.swift */; };
+		B7DF60F62C8CD186000D428F /* OwnerMessengerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DF60F52C8CD186000D428F /* OwnerMessengerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,8 +31,13 @@
 		B73F6DDA2C8C2EFF00055C13 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		B73F6DDC2C8C30B600055C13 /* OwnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerView.swift; sourceTree = "<group>"; };
 		B73F6DDE2C8C31A500055C13 /* ParticipantsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticipantsView.swift; sourceTree = "<group>"; };
-		B73F6DE12C8C728300055C13 /* DeviceFinderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceFinderViewModel.swift; sourceTree = "<group>"; };
-		B7DF60E62C8C8C58000D428F /* MessengerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessengerView.swift; sourceTree = "<group>"; };
+		B7DF60E62C8C8C58000D428F /* ParticipantsMessengerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticipantsMessengerView.swift; sourceTree = "<group>"; };
+		B7DF60E82C8CAB46000D428F /* OwnerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerViewModel.swift; sourceTree = "<group>"; };
+		B7DF60EB2C8CAC5E000D428F /* PeerDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeerDevice.swift; sourceTree = "<group>"; };
+		B7DF60ED2C8CB14E000D428F /* PermissionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionRequest.swift; sourceTree = "<group>"; };
+		B7DF60EF2C8CB2E6000D428F /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		B7DF60F12C8CB9B6000D428F /* ParticipantsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticipantsViewModel.swift; sourceTree = "<group>"; };
+		B7DF60F52C8CD186000D428F /* OwnerMessengerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerMessengerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +70,7 @@
 		B73F6DCB2C8C2D3700055C13 /* SwiftP2P */ = {
 			isa = PBXGroup;
 			children = (
+				B7DF60EA2C8CAC33000D428F /* Models */,
 				B73F6DDB2C8C301B00055C13 /* Views */,
 				B73F6DDA2C8C2EFF00055C13 /* Info.plist */,
 				B73F6DCC2C8C2D3700055C13 /* SwiftP2PApp.swift */,
@@ -90,11 +101,23 @@
 			isa = PBXGroup;
 			children = (
 				B73F6DDC2C8C30B600055C13 /* OwnerView.swift */,
+				B7DF60E82C8CAB46000D428F /* OwnerViewModel.swift */,
+				B7DF60F52C8CD186000D428F /* OwnerMessengerView.swift */,
 				B73F6DDE2C8C31A500055C13 /* ParticipantsView.swift */,
-				B73F6DE12C8C728300055C13 /* DeviceFinderViewModel.swift */,
-				B7DF60E62C8C8C58000D428F /* MessengerView.swift */,
+				B7DF60F12C8CB9B6000D428F /* ParticipantsViewModel.swift */,
+				B7DF60E62C8C8C58000D428F /* ParticipantsMessengerView.swift */,
 			);
 			path = P2P;
+			sourceTree = "<group>";
+		};
+		B7DF60EA2C8CAC33000D428F /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B7DF60EB2C8CAC5E000D428F /* PeerDevice.swift */,
+				B7DF60ED2C8CB14E000D428F /* PermissionRequest.swift */,
+				B7DF60EF2C8CB2E6000D428F /* Message.swift */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -167,12 +190,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B7DF60E72C8C8C58000D428F /* MessengerView.swift in Sources */,
-				B73F6DE22C8C728300055C13 /* DeviceFinderViewModel.swift in Sources */,
+				B7DF60E72C8C8C58000D428F /* ParticipantsMessengerView.swift in Sources */,
 				B73F6DCF2C8C2D3700055C13 /* ContentView.swift in Sources */,
+				B7DF60EE2C8CB14E000D428F /* PermissionRequest.swift in Sources */,
 				B73F6DCD2C8C2D3700055C13 /* SwiftP2PApp.swift in Sources */,
+				B7DF60E92C8CAB46000D428F /* OwnerViewModel.swift in Sources */,
+				B7DF60F22C8CB9B6000D428F /* ParticipantsViewModel.swift in Sources */,
 				B73F6DDF2C8C31A500055C13 /* ParticipantsView.swift in Sources */,
+				B7DF60F02C8CB2E6000D428F /* Message.swift in Sources */,
 				B73F6DDD2C8C30B600055C13 /* OwnerView.swift in Sources */,
+				B7DF60F62C8CD186000D428F /* OwnerMessengerView.swift in Sources */,
+				B7DF60EC2C8CAC5E000D428F /* PeerDevice.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
